@@ -29,45 +29,49 @@ const RTCPeerConnection = (
   window.mozRTCPeerConnection
 ).bind(window);
 
-if(!connected){
-  if (peerConnection && peerConnection.connectionState === 'connected') {
+// uncomment this to use do the actual D-iD connection
+// if(!connected){
+//   if (peerConnection && peerConnection.connectionState === 'connected') {
     
-  }
-  else {
-    stopAllStreams();
-    closePC();
+//   }
+//   else {
+//     stopAllStreams();
+//     closePC();
     
-    const sessionResponse = await fetch(`${DID_API.url}/talks/streams`, {
-      method: 'POST',
-      headers: {'Authorization': `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        source_url: "https://raw.githubusercontent.com/1Samoth/DID_Chatbot/refs/heads/main/charlie.png",
-      }),
-    });
+//     const sessionResponse = await fetch(`${DID_API.url}/talks/streams`, {
+//       method: 'POST',
+//       headers: {'Authorization': `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
+//       body: JSON.stringify({
+//         source_url: "https://raw.githubusercontent.com/1Samoth/DID_Chatbot/refs/heads/main/charlie.png",
+//       }),
+//     });
 
-    const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json()
-    streamId = newStreamId;
-    sessionId = newSessionId;
+//     const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json()
+//     streamId = newStreamId;
+//     sessionId = newSessionId;
     
-    try {
-      sessionClientAnswer = await createPeerConnection(offer, iceServers);
-      connected = true;
-    } catch (e) {
-      console.log('error during streaming setup', e);
-      stopAllStreams();
-      closePC();
-      //return;
-    }
+//     try {
+//       sessionClientAnswer = await createPeerConnection(offer, iceServers);
+//       connected = true;
+//     } catch (e) {
+//       console.log('error during streaming setup', e);
+//       stopAllStreams();
+//       closePC();
+//       //return;
+//     }
 
-    const sdpResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}/sdp`,
-      {
-        method: 'POST',
-        headers: {Authorization: `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
-        body: JSON.stringify({answer: sessionClientAnswer, session_id: sessionId})
-    });
-  }
-  playIdleVideo();
-}
+//     const sdpResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}/sdp`,
+//       {
+//         method: 'POST',
+//         headers: {Authorization: `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
+//         body: JSON.stringify({answer: sessionClientAnswer, session_id: sessionId})
+//     });
+//   }
+//   playIdleVideo();
+// }
+
+// comment this when using the actual D-iD connection
+playIdleVideo();
 
 talkButton.onclick = async () => {
   if (peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') {
