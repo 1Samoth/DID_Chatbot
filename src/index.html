@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>D-ID Streaming POC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <div id="content">
+      <div id="video-wrapper">
+        <div>
+          <video id="talk-video" width="400" height="400" autoplay muted></video>
+        </div>
+      </div>
+      <br />
+      <div id="input-container">
+        <input type="text" id="user-input-field" placeholder="Bonjour, je m'appelle Charlie. Je suis actuellement en apprentissage. N'hésitez pas à me poser vos questions." />
+        <hr>
+      </div>
+      <div id="buttons">
+        <button id="talk-button" type="button">Envoyer</button>
+        <button id="destroy-button" type="button">Quitter</button>
+      </div>
+
+      <!-- <div id="status">
+        ICE gathering status: <label id="ice-gathering-status-label"></label
+        ><br />
+        ICE status: <label id="ice-status-label"></label><br />
+        Peer connection status: <label id="peer-status-label"></label><br />
+        Signaling status: <label id="signaling-status-label"></label><br />
+        Streaming status: <label id="streaming-status-label"></label><br />
+      </div> -->
+    </div>
+
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>

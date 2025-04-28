@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "dependencies": {
+    "express": "^4.21.2",
+    "js-base64": "^3.7.7",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.78.1"
+  },
+  "scripts": {
+    "dev": "node app.js"
+  }
+}
