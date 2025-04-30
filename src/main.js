@@ -29,55 +29,54 @@ const RTCPeerConnection = (
   window.mozRTCPeerConnection
 ).bind(window);
 
-// uncomment this to use do the actual D-iD connection
-// if(!connected){
-//   if (peerConnection && peerConnection.connectionState === 'connected') {
+//uncomment this to use do the actual D-iD connection
+if(!connected){
+  if (peerConnection && peerConnection.connectionState === 'connected') {
     
-//   }
-//   else {
-//     stopAllStreams();
-//     closePC();
+  }
+  else {
+    stopAllStreams();
+    closePC();
     
-//     const sessionResponse = await fetch(`${DID_API.url}/talks/streams`, {
-//       method: 'POST',
-//       headers: {'Authorization': `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
-//       body: JSON.stringify({
-//         source_url: "https://raw.githubusercontent.com/1Samoth/DID_Chatbot/refs/heads/main/charlie.png",
-//       }),
-//     });
+    const sessionResponse = await fetch(`${DID_API.url}/talks/streams`, {
+      method: 'POST',
+      headers: {'Authorization': `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        source_url: "https://raw.githubusercontent.com/1Samoth/DID_Chatbot/refs/heads/main/charlie.png",
+      }),
+    });
 
-//     const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json()
-//     streamId = newStreamId;
-//     sessionId = newSessionId;
+    const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json()
+    streamId = newStreamId;
+    sessionId = newSessionId;
     
-//     try {
-//       sessionClientAnswer = await createPeerConnection(offer, iceServers);
-//       connected = true;
-//     } catch (e) {
-//       console.log('error during streaming setup', e);
-//       stopAllStreams();
-//       closePC();
-//       //return;
-//     }
+    try {
+      sessionClientAnswer = await createPeerConnection(offer, iceServers);
+      connected = true;
+    } catch (e) {
+      console.log('error during streaming setup', e);
+      stopAllStreams();
+      closePC();
+    }
 
-//     const sdpResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}/sdp`,
-//       {
-//         method: 'POST',
-//         headers: {Authorization: `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
-//         body: JSON.stringify({answer: sessionClientAnswer, session_id: sessionId})
-//     });
-//   }
-//   playIdleVideo();
-// }
+    const sdpResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}/sdp`,
+      {
+        method: 'POST',
+        headers: {Authorization: `Basic ${DID_API.key}`, 'Content-Type': 'application/json'},
+        body: JSON.stringify({answer: sessionClientAnswer, session_id: sessionId})
+    });
+  }
+  playIdleVideo();
+}
 
 // comment this when using the actual D-iD connection
-playIdleVideo();
+// playIdleVideo();
 
 talkButton.onclick = async () => {
-  if (peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') {
+  console.log(userInput.value);
+  if ((peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') && userInput.value.length > 0) {
     const responseFromOpenAI = await fetchOpenAIResponse(userInput.value);
     if(responseFromOpenAI) {
-      console.log('RESPONSE FROM OPENAI: ' . responseFromOpenAI);
       console.log('OpenAI Response Length:', responseFromOpenAI.length);
       console.log("OpenAI Response:", responseFromOpenAI);
     }
@@ -87,47 +86,43 @@ talkButton.onclick = async () => {
 
     userInput.value = '';
 
-    const _data = await responseFromOpenAI;
-
-    console.log("_DATA WAIT : " . _data);
-
-    const talkResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}`, {
-      method: 'POST',
-      headers: { 
-        Authorization: `Basic ${DID_API.key}`, 
-        'Content-Type': 'application/json'
-     },
-      body: JSON.stringify({
-        script: {
-          type: 'text',
-          subtitles: 'false',
-          provider: { type: 'microsoft', voice_id: 'fr-CA-SylvieNeural' },
-          ssml: false,
-          input: responseFromOpenAI
-        },
-        config: {
-          fluent: true,
-          pad_audio: 0,
-          driver_expressions: {
-            expressions: [{ expression: 'neutral', start_frame: 0, intensity: 0 }],
-            transition_frames: 0
-          },
-          align_driver: true,
-          align_expand_factor: 0,
-          auto_match: true,
-          motion_factor: 0,
-          normalization_factor: 0,
-          sharpen: true,
-          stitch: true,
-          result_format: 'mp4'
-        },
-        'driver_url': 'bank://lively/',
-        'config': {
-          'stitch': true,
-        },
-        'session_id': sessionId
-      })
-    });
+    // const talkResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}`, {
+    //   method: 'POST',
+    //   headers: { 
+    //     Authorization: `Basic ${DID_API.key}`, 
+    //     'Content-Type': 'application/json'
+    //  },
+    //   body: JSON.stringify({
+    //     script: {
+    //       type: 'text',
+    //       subtitles: 'false',
+    //       provider: { type: 'microsoft', voice_id: 'fr-CA-SylvieNeural' },
+    //       ssml: false,
+    //       input: responseFromOpenAI
+    //     },
+    //     config: {
+    //       fluent: true,
+    //       pad_audio: 0,
+    //       driver_expressions: {
+    //         expressions: [{ expression: 'neutral', start_frame: 0, intensity: 0 }],
+    //         transition_frames: 0
+    //       },
+    //       align_driver: true,
+    //       align_expand_factor: 0,
+    //       auto_match: true,
+    //       motion_factor: 0,
+    //       normalization_factor: 0,
+    //       sharpen: true,
+    //       stitch: true,
+    //       result_format: 'mp4'
+    //     },
+    //     'driver_url': 'bank://lively/',
+    //     'config': {
+    //       'stitch': true,
+    //     },
+    //     'session_id': sessionId
+    //   })
+    // });
   }
 };
 
@@ -212,16 +207,6 @@ function onVideoStatusChange(videoIsPlaying, stream) {
 }
 
 function onTrack(event) {
-  /*
-   * The following code is designed to provide information about wether currently there is data
-   * that's being streamed - It does so by periodically looking for changes in total stream data size
-   *
-   * This information in our case is used in order to show idle video while no talk is streaming.
-   * To create this idle video use the POST https://api.d-id.com/talks endpoint with a silent audio file or a text script with only ssml breaks 
-   * https://docs.aws.amazon.com/polly/latest/dg/supportedtags.html#break-tag
-   * for seamless results use `config.fluent: true` and provide the same configuration as the streaming video
-   */
-
   if (!event.track) return;
 
   statsIntervalId = setInterval(async () => {
