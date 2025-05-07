@@ -19,7 +19,7 @@ export function playIdleVideo() {
     talkVideo.srcObject = undefined;
     talkVideo.setAttribute('playsinline', '');
     talkVideo.setAttribute('muted', '');
-    talkVideo.src = 'img/idle.mp4'; // TODO : Mettre notre propre vidéo idle de cath-ia.
+    talkVideo.src = 'img/idle.mp4';
     talkVideo.loop = true;
 }
 

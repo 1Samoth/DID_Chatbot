@@ -1,7 +1,9 @@
 'use strict';
 import DID_API from './keys/did.json' with { type: 'json' };
 import { setVideoElement, playIdleVideo, stopAllStreams } from './components/streamManager.js';
-import { fetchOpenAIResponse } from './components/api.js';
+import { fetchAPIResponse } from './components/test_generia.js';
+import { removeUrls } from './components/formatter.js';
+
 
 let peerConnection;
 let streamId;
@@ -15,6 +17,7 @@ let lastBytesReceived;
 const talkButton = document.getElementById('talk-button');
 const destroyButton = document.getElementById('destroy-button');
 const userInput = document.getElementById('user-input-field');
+
 // const peerStatusLabel = document.getElementById('peer-status-label');
 // const iceStatusLabel = document.getElementById('ice-status-label');
 // const iceGatheringStatusLabel = document.getElementById('ice-gathering-status-label');
@@ -29,7 +32,6 @@ const RTCPeerConnection = (
   window.mozRTCPeerConnection
 ).bind(window);
 
-//uncomment this to use do the actual D-iD connection
 if(!connected){
   if (peerConnection && peerConnection.connectionState === 'connected') {
     
@@ -57,6 +59,7 @@ if(!connected){
       console.log('error during streaming setup', e);
       stopAllStreams();
       closePC();
+      //return;
     }
 
     const sdpResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}/sdp`,
@@ -69,69 +72,79 @@ if(!connected){
   playIdleVideo();
 }
 
-// comment this when using the actual D-iD connection
-// playIdleVideo();
+//playIdleVideo();
+
 
 talkButton.onclick = async () => {
-  console.log(userInput.value);
-  if ((peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') && userInput.value.length > 0) {
-    const responseFromOpenAI = await fetchOpenAIResponse(userInput.value);
-    if(responseFromOpenAI) {
-      console.log('OpenAI Response Length:', responseFromOpenAI.length);
-      console.log("OpenAI Response:", responseFromOpenAI);
+ if ((peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') && userInput.value.length > 0) {  
+    sendUserMessage();
+    const responseFromGenerIA = await fetchAPIResponse(userInput.value);
+    //console.log('input : ' + userInput.value);
+   
+    if(responseFromGenerIA) {
+      //console.log('RESPONSE FROM GENERIA: ' + responseFromGenerIA);
+      //console.log('GENERIA Response Length:', responseFromGenerIA.length);
+      //console.log("GENERIA Response:", responseFromGenerIA);
+    
     }
     else {
-      console.log('ERREUR OPENAI', responseFromOpenAI);
+      //console.log('ERREUR GENERIA', responseFromGenerIA);
     }
 
     userInput.value = '';
+    //console.log("talkButton")
 
-    // const talkResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}`, {
-    //   method: 'POST',
-    //   headers: { 
-    //     Authorization: `Basic ${DID_API.key}`, 
-    //     'Content-Type': 'application/json'
-    //  },
-    //   body: JSON.stringify({
-    //     script: {
-    //       type: 'text',
-    //       subtitles: 'false',
-    //       provider: { type: 'microsoft', voice_id: 'fr-CA-SylvieNeural' },
-    //       ssml: false,
-    //       input: responseFromOpenAI
-    //     },
-    //     config: {
-    //       fluent: true,
-    //       pad_audio: 0,
-    //       driver_expressions: {
-    //         expressions: [{ expression: 'neutral', start_frame: 0, intensity: 0 }],
-    //         transition_frames: 0
-    //       },
-    //       align_driver: true,
-    //       align_expand_factor: 0,
-    //       auto_match: true,
-    //       motion_factor: 0,
-    //       normalization_factor: 0,
-    //       sharpen: true,
-    //       stitch: true,
-    //       result_format: 'mp4'
-    //     },
-    //     'driver_url': 'bank://lively/',
-    //     'config': {
-    //       'stitch': true,
-    //     },
-    //     'session_id': sessionId
-    //   })
-    // });
+    const _data = await removeUrls(responseFromGenerIA);
+
+    console.log(`_DATA WAIT : ${_data}`);
+
+    const talkResponse = await fetch(`${DID_API.url}/talks/streams/${streamId}`, {
+      method: 'POST',
+      headers: { 
+        Authorization: `Basic ${DID_API.key}`, 
+        'Content-Type': 'application/json'
+     },
+      body: JSON.stringify({
+        script: {
+          type: 'text',
+          subtitles: false,
+          provider: { type: 'microsoft', voice_id: 'fr-CA-SylvieNeural' },
+          ssml: false,
+          input: _data
+        },
+        config: {
+          fluent: true,
+          pad_audio: 0,
+          driver_expressions: {
+            expressions: [{ expression: 'neutral', start_frame: 0, intensity: 0 }],
+            transition_frames: 0
+          },
+          align_driver: true,
+          align_expand_factor: 0,
+          auto_match: true,
+          motion_factor: 0,
+          normalization_factor: 0,
+          sharpen: true,
+          stitch: true,
+          result_format: 'mp4'
+        },
+        'driver_url': 'bank://lively/',
+        'config': {
+          'stitch': true,
+        },
+        'session_id': sessionId
+      })
+    });
   }
-};
+}
+//};
 
-document.addEventListener('keydown', async (event) => {
+/*document.addEventListener('keydown', async (event) => {
   if (event.key === 'Enter') {
     event.preventDefault();
     talkButton.click();
   }
-});
+});*/
 
 destroyButton.onclick = async () => {
   await fetch(`${DID_API.url}/talks/streams/${streamId}`, {
@@ -207,6 +220,16 @@ function onVideoStatusChange(videoIsPlaying, stream) {
 }
 
 function onTrack(event) {
+  /*
+   * The following code is designed to provide information about wether currently there is data
+   * that's being streamed - It does so by periodically looking for changes in total stream data size
+   *
+   * This information in our case is used in order to show idle video while no talk is streaming.
+   * To create this idle video use the POST https://api.d-id.com/talks endpoint with a silent audio file or a text script with only ssml breaks 
+   * https://docs.aws.amazon.com/polly/latest/dg/supportedtags.html#break-tag
+   * for seamless results use `config.fluent: true` and provide the same configuration as the streaming video
+   */
+
   if (!event.track) return;
 
   statsIntervalId = setInterval(async () => {
@@ -287,3 +310,30 @@ async function fetchWithRetries(url, options, retries = 3) {
     }
   }
 }
+
+
+/*Affichage des questions dans le chat */
+const input = document.getElementById('user-input-field');
+const chatDiv = document.getElementById('messages');
+
+// Fonction réutilisable pour afficher la question
+function sendUserMessage() {
+  const questionText = input.value.trim();
+  if (questionText === '') return;
+
+  const questionEl = document.createElement('div');
+  questionEl.className = 'question';
+  questionEl.textContent = ('Utilisateur : ' + questionText);
+  chatDiv.appendChild(questionEl);
+ 
+}
+
+// Gestion de la touche "Enter"
+input.addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    talkButton.click();
+  }
+});
+
+
